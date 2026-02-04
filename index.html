@@ -1595,22 +1595,22 @@ async function generatePdfReport() {
         
         pdf.setFontSize(24);
         pdf.setTextColor(0, 0, 0);
-        pdf.text('10-Day Weather Forecast Report', 105, 40, { align: 'center' });
+        pdf.text('10-Day Weather Forecast Report', 105, 60, { align: 'center' });
         
         pdf.setFontSize(16);
         pdf.setTextColor(50, 50, 50);
-        pdf.text(currentLocation.name, 105, 60, { align: 'center' });
+        pdf.text(currentLocation.name, 105, 80, { align: 'center' });
         
         pdf.setFontSize(14);
-        pdf.text(`${forecastData.startDate} to ${forecastData.endDate}`, 105, 75, { align: 'center' });
+        pdf.text(`${forecastData.startDate} to ${forecastData.endDate}`, 105, 95, { align: 'center' });
         
         pdf.setFontSize(12);
-        pdf.text(`Coordinates: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`, 105, 90, { align: 'center' });
-        pdf.text(`Report generated: ${new Date().toLocaleDateString()}`, 105, 100, { align: 'center' });
+        pdf.text(`Coordinates: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`, 105, 110, { align: 'center' });
+        pdf.text(`Report generated: ${new Date().toLocaleDateString()}`, 105, 120, { align: 'center' });
         
         pdf.setFontSize(10);
         pdf.setTextColor(100, 100, 100);
-        pdf.text('This report contains temperature and wind forecasts for the next 10 days', 105, 120, { align: 'center' });
+        pdf.text('This report contains temperature and wind forecasts for the next 10 days', 105, 140, { align: 'center' });
         
         // Generate a page for each day
         for (let i = 0; i < forecastData.days.length; i++) {
@@ -1722,6 +1722,7 @@ async function generatePdfReport() {
     </script>
 </body>
 </html>
+
 
 
 
