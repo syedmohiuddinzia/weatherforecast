@@ -934,44 +934,57 @@
     </div>
 
     <!-- PDF Export Modal -->
-    <div id="exportModal" class="modal export-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-file-pdf"></i> Export Forecast Report</h2>
-                <button class="modal-close" id="closeExportModalBtn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="exportOptions">
-                    <h3>Export Options</h3>
-                    <div class="export-options">
-                        <div class="export-option">
-                            <input type="radio" id="exportCurrent" name="exportOption" value="current" checked>
-                            <div style="flex: 1;">
-                                <label for="exportCurrent">Current Day Only</label>
-                                <div class="export-option-desc">Export temperature and wind charts on one page</div>
+<div id="exportModal" class="modal export-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-file-pdf"></i> Export 10-Day Forecast Report</h2>
+            <button class="modal-close" id="closeExportModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="exportOptions">
+                <h3>Export All 10 Days</h3>
+                <div class="export-options">
+                    <div class="export-option" style="cursor: default; border-left: 4px solid var(--accent-color);">
+                        <i class="fas fa-calendar-alt" style="font-size: 1.5rem; color: var(--accent-color);"></i>
+                        <div style="flex: 1;">
+                            <label style="font-weight: 600; color: var(--text-color);">10-Day Forecast Report</label>
+                            <div class="export-option-desc">
+                                Generates a PDF with temperature and wind charts for all 10 days.<br>
+                                Each day gets its own page with both charts and daily statistics.
+                            </div>
+                            <div style="margin-top: 10px; padding: 10px; background: rgba(59, 130, 246, 0.1); border-radius: 6px;">
+                                <p style="font-size: 0.9rem; margin: 5px 0;"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Cover page with location info</p>
+                                <p style="font-size: 0.9rem; margin: 5px 0;"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> 10 pages (one per day)</p>
+                                <p style="font-size: 0.9rem; margin: 5px 0;"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Temperature and wind charts on each page</p>
+                                <p style="font-size: 0.9rem; margin: 5px 0;"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Daily statistics summary</p>
+                                <p style="font-size: 0.9rem; margin: 5px 0;"><i class="fas fa-check-circle" style="color: var(--success-color);"></i> Black & white format for printing</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <div style="margin-top: 30px; display: flex; gap: 10px;">
-                        <button id="cancelExportBtn" class="btn btn-secondary" style="flex: 1;">
-                            Cancel
-                        </button>
-                        <button id="generatePdfBtn" class="btn btn-primary" style="flex: 1; background: var(--accent-color);">
-                            <i class="fas fa-download"></i> Generate PDF
-                        </button>
-                    </div>
                 </div>
                 
-                <div id="exportProcessing" class="export-processing" style="display: none;">
-                    <div class="loading-spinner"></div>
-                    <h3>Generating PDF Report</h3>
-                    <p>Please wait while we create your PDF document...</p>
-                    <p id="exportProgress" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px;"></p>
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button id="cancelExportBtn" class="btn btn-secondary" style="flex: 1;">
+                        Cancel
+                    </button>
+                    <button id="generatePdfBtn" class="btn btn-primary" style="flex: 1; background: var(--accent-color);">
+                        <i class="fas fa-download"></i> Generate 10-Day PDF
+                    </button>
                 </div>
+            </div>
+            
+            <div id="exportProcessing" class="export-processing" style="display: none;">
+                <div class="loading-spinner"></div>
+                <h3>Generating 10-Day PDF Report</h3>
+                <p>Please wait while we create your PDF document...</p>
+                <p id="exportProgress" style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px;"></p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 10px;">
+                    <i class="fas fa-info-circle"></i> This may take a moment as we generate charts for all 10 days.
+                </p>
             </div>
         </div>
     </div>
+</div>
 
     <script>
         // DOM Elements
@@ -1550,136 +1563,166 @@
             }
         }
         
-        // PDF Export Functions
-        function openExportModal() {
-            if (!currentLocation || !forecastData) {
-                alert('Please select a location and load forecast data first.');
-                return;
+// PDF Export Functions - For 10 days
+function openExportModal() {
+    if (!currentLocation || !forecastData) {
+        alert('Please select a location and load forecast data first.');
+        return;
+    }
+    exportModal.style.display = 'flex';
+}
+
+function closeExportModal() {
+    exportModal.style.display = 'none';
+    exportOptions.style.display = 'block';
+    exportProcessing.style.display = 'none';
+}
+
+async function generatePdfReport() {
+    try {
+        exportOptions.style.display = 'none';
+        exportProcessing.style.display = 'block';
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        // Store original chart colors and current day
+        const originalTempChart = { ...temperatureChart.config.data.datasets[0] };
+        const originalWindChart = { 
+            windSpeed: { ...windChart.config.data.datasets[0] },
+            windGusts: { ...windChart.config.data.datasets[1] }
+        };
+        const originalDayIndex = currentDayIndex;
+        
+        // Cover page
+        exportProgress.textContent = 'Creating cover page...';
+        pdf.setFontSize(24);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('10-Day Weather Forecast Report', 105, 40, { align: 'center' });
+        
+        pdf.setFontSize(16);
+        pdf.setTextColor(50, 50, 50);
+        pdf.text(currentLocation.name, 105, 60, { align: 'center' });
+        
+        pdf.setFontSize(14);
+        pdf.text(`${forecastData.startDate} to ${forecastData.endDate}`, 105, 75, { align: 'center' });
+        
+        pdf.setFontSize(12);
+        pdf.text(`Coordinates: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`, 105, 90, { align: 'center' });
+        pdf.text(`Report generated: ${new Date().toLocaleDateString()}`, 105, 100, { align: 'center' });
+        
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('This report contains temperature and wind forecasts for the next 10 days', 105, 120, { align: 'center' });
+        
+        // Generate a page for each day
+        for (let i = 0; i < forecastData.days.length; i++) {
+            exportProgress.textContent = `Generating page ${i + 1} of ${forecastData.days.length}...`;
+            
+            // Update charts for this day
+            updateChartsForDay(i);
+            
+            // Apply black/white styles for capture
+            temperatureChart.config.data.datasets[0].borderColor = '#000000';
+            temperatureChart.config.data.datasets[0].backgroundColor = 'rgba(0, 0, 0, 0.1)';
+            
+            windChart.config.data.datasets[0].borderColor = '#333333';
+            windChart.config.data.datasets[0].backgroundColor = 'rgba(51, 51, 51, 0.1)';
+            windChart.config.data.datasets[1].borderColor = '#666666';
+            
+            // Update charts without animation
+            temperatureChart.update('none');
+            windChart.update('none');
+            
+            // Wait a bit for charts to render
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Add new page for each day (except first which is cover)
+            if (i > 0 || forecastData.days.length > 0) {
+                pdf.addPage();
             }
-            exportModal.style.display = 'flex';
+            
+            const day = forecastData.days[i];
+            
+            // Day header
+            pdf.setFontSize(18);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text(`Day ${i + 1}: ${day.dayOfWeek}, ${day.date}`, 20, 20);
+            
+            pdf.setFontSize(12);
+            pdf.setTextColor(50, 50, 50);
+            pdf.text(currentLocation.name, 20, 30);
+            
+            // Add temperature chart
+            const tempCanvas = await html2canvas(document.getElementById('temperatureChart'), {
+                scale: 1.5,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
+            pdf.addImage(tempImgData, 'PNG', 10, 40, 190, 80);
+            
+            // Add wind chart
+            const windCanvas = await html2canvas(document.getElementById('windChart'), {
+                scale: 1.5,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            const windImgData = windCanvas.toDataURL('image/png', 1.0);
+            pdf.addImage(windImgData, 'PNG', 10, 130, 190, 80);
+            
+            // Add daily statistics
+            pdf.setFontSize(11);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text('Daily Statistics:', 20, 220);
+            
+            pdf.setFontSize(10);
+            pdf.text(`Average Temperature: ${day.avgTemp.toFixed(1)}°C`, 20, 228);
+            pdf.text(`Maximum Temperature: ${day.maxTemp.toFixed(1)}°C`, 20, 235);
+            pdf.text(`Minimum Temperature: ${day.minTemp.toFixed(1)}°C`, 20, 242);
+            pdf.text(`Maximum Wind Speed: ${day.maxWind.toFixed(1)} m/s`, 110, 228);
+            pdf.text(`Maximum Wind Gust: ${day.maxGust.toFixed(1)} m/s`, 110, 235);
+            
+            // Add time range info
+            pdf.setFontSize(9);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`Data from ${day.hours[0]} to ${day.hours[day.hours.length-1]} (24-hour forecast)`, 20, 255);
+            
+            // Add page number
+            pdf.setFontSize(8);
+            pdf.text(`Page ${i + 2} of ${forecastData.days.length + 1}`, 105, 290, { align: 'center' });
         }
         
-        function closeExportModal() {
-            exportModal.style.display = 'none';
-            exportOptions.style.display = 'block';
-            exportProcessing.style.display = 'none';
-        }
+        // Restore original chart colors and day selection
+        temperatureChart.config.data.datasets[0] = originalTempChart;
+        windChart.config.data.datasets[0] = originalWindChart.windSpeed;
+        windChart.config.data.datasets[1] = originalWindChart.windGusts;
+        updateChartsForDay(originalDayIndex);
         
-        async function generatePdfReport() {
-            try {
-                exportOptions.style.display = 'none';
-                exportProcessing.style.display = 'block';
-                exportProgress.textContent = 'Initializing PDF generation...';
-                
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                // Create cover page with black text
-                pdf.setFontSize(20);
-                pdf.setTextColor(0, 0, 0);
-                pdf.text('Weather Forecast Report', 105, 30, { align: 'center' });
-                
-                pdf.setFontSize(14);
-                pdf.setTextColor(50, 50, 50);
-                pdf.text(currentLocation.name, 105, 45, { align: 'center' });
-                
-                const currentDay = forecastData.days[currentDayIndex];
-                pdf.text(`${currentDay.dayOfWeek}, ${currentDay.date}`, 105, 55, { align: 'center' });
-                
-                pdf.setFontSize(12);
-                pdf.text(`Coordinates: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`, 105, 65, { align: 'center' });
-                pdf.text(`Report generated: ${new Date().toLocaleDateString()}`, 105, 75, { align: 'center' });
-                
-                // Add temperature chart on same page
-                exportProgress.textContent = 'Capturing temperature chart...';
-                
-                // Temporarily change chart to black/white for capture
-                const originalTempChart = { ...temperatureChart.config.data.datasets[0] };
-                const originalWindChart = { 
-                    windSpeed: { ...windChart.config.data.datasets[0] },
-                    windGusts: { ...windChart.config.data.datasets[1] }
-                };
-                
-                // Apply black/white styles for capture
-                temperatureChart.config.data.datasets[0].borderColor = '#000000';
-                temperatureChart.config.data.datasets[0].backgroundColor = 'rgba(0, 0, 0, 0.1)';
-                temperatureChart.update('none');
-                
-                windChart.config.data.datasets[0].borderColor = '#333333';
-                windChart.config.data.datasets[0].backgroundColor = 'rgba(51, 51, 51, 0.1)';
-                windChart.config.data.datasets[1].borderColor = '#666666';
-                windChart.update('none');
-                
-                // Add separator line
-                pdf.setDrawColor(0, 0, 0);
-                pdf.setLineWidth(0.5);
-                pdf.line(10, 85, 200, 85);
-                
-                // Add temperature chart
-                const tempCanvas = await html2canvas(document.getElementById('temperatureChart'), {
-                    scale: 1.5,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
-                const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
-                pdf.addImage(tempImgData, 'PNG', 10, 90, 190, 80);
-                
-                // Add wind chart on same page
-                exportProgress.textContent = 'Capturing wind chart...';
-                const windCanvas = await html2canvas(document.getElementById('windChart'), {
-                    scale: 1.5,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
-                const windImgData = windCanvas.toDataURL('image/png', 1.0);
-                pdf.addImage(windImgData, 'PNG', 10, 180, 190, 80);
-                
-                // Add summary section
-                pdf.setFontSize(10);
-                pdf.setTextColor(0, 0, 0);
-                pdf.text('Daily Summary:', 20, 270);
-                
-                pdf.setFontSize(9);
-                pdf.text(`Average Temperature: ${currentDay.avgTemp.toFixed(1)}°C`, 20, 277);
-                pdf.text(`Max Temperature: ${currentDay.maxTemp.toFixed(1)}°C`, 20, 284);
-                pdf.text(`Min Temperature: ${currentDay.minTemp.toFixed(1)}°C`, 20, 291);
-                pdf.text(`Max Wind Speed: ${currentDay.maxWind.toFixed(1)} m/s`, 110, 277);
-                pdf.text(`Max Wind Gust: ${currentDay.maxGust.toFixed(1)} m/s`, 110, 284);
-                
-                // Restore original chart colors
-                temperatureChart.config.data.datasets[0] = originalTempChart;
-                windChart.config.data.datasets[0] = originalWindChart.windSpeed;
-                windChart.config.data.datasets[1] = originalWindChart.windGusts;
-                temperatureChart.update('none');
-                windChart.update('none');
-                
-                // Add page number
-                pdf.setFontSize(8);
-                pdf.setTextColor(100, 100, 100);
-                pdf.text('Page 1 of 1', 105, 290, { align: 'center' });
-                
-                const fileName = `Weather_Report_${currentLocation.name.replace(/\s+/g, '_')}_${currentDay.date}.pdf`;
-                pdf.save(fileName);
-                
-                setTimeout(() => {
-                    closeExportModal();
-                    alert('PDF report generated successfully!');
-                }, 500);
-                
-            } catch (error) {
-                console.error('Error generating PDF:', error);
-                exportProgress.textContent = 'Error generating PDF. Please try again.';
-                setTimeout(() => {
-                    closeExportModal();
-                    alert('Failed to generate PDF. Please try again.');
-                }, 1000);
-            }
-        }
+        // Save the PDF
+        const fileName = `10Day_Weather_Report_${currentLocation.name.replace(/\s+/g, '_')}_${forecastData.startDate}_to_${forecastData.endDate}.pdf`;
+        pdf.save(fileName);
+        
+        setTimeout(() => {
+            closeExportModal();
+            alert(`PDF report generated successfully! ${forecastData.days.length} days included.`);
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        exportProgress.textContent = 'Error generating PDF. Please try again.';
+        setTimeout(() => {
+            closeExportModal();
+            alert('Failed to generate PDF. Please try again.');
+        }, 1000);
+    }
+}
         
         // Initialize the application
         window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
+
