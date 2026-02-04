@@ -779,21 +779,26 @@
             <header>
                 <div class="header-left">
                     <div class="app-logo">
-                        <!-- Small logo icon -->
-                        <svg class="app-logo-icon" width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M32 12L40 20L48 12L56 20L48 28L56 36L48 44L40 36L32 44L24 36L16 44L8 36L16 28L8 20L16 12L24 20L32 12Z" fill="#3b82f6"/>
-                            <path d="M32 28L40 36L32 44L24 36L32 28Z" fill="#06b6d4"/>
-                            <path d="M40 20L32 28L24 20L32 12L40 20Z" fill="#0ea5e9"/>
-                            <path d="M48 28L40 36L48 44L56 36L48 28Z" fill="#0284c7"/>
-                            <path d="M16 28L24 36L16 44L8 36L16 28Z" fill="#0284c7"/>
-                            <circle cx="32" cy="32" r="4" fill="#f8fafc"/>
-                        </svg>
                         <div class="header-title">
-                            <h1>Weather Forecast Dashboard</h1>
+                            <h1>H5 Weather Forecast Dashboard</h1>
                             <p class="subtitle">10-day forecast with custom locations</p>
                         </div>
                     </div>
                 </div>
+
+            <div class="date-range-selector card">
+                <h2><i class="far fa-calendar-alt"></i> Select Date Range</h2>
+                <div class="date-inputs">
+                    <div class="input-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="input-group">
+                        <label for="endDate">End Date (Max 10 days)</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+            </div>
                 
                 <div class="header-right">
                     <div class="user-info">
@@ -811,20 +816,6 @@
                     </button>
                 </div>
             </header>
-
-            <div class="date-range-selector card">
-                <h2><i class="far fa-calendar-alt"></i> Select Date Range</h2>
-                <div class="date-inputs">
-                    <div class="input-group">
-                        <label for="startDate">Start Date</label>
-                        <input type="date" id="startDate">
-                    </div>
-                    <div class="input-group">
-                        <label for="endDate">End Date (Max 10 days)</label>
-                        <input type="date" id="endDate">
-                    </div>
-                </div>
-            </div>
 
             <div id="selectedLocationInfo" class="location-info" style="display: none;">
                 <div class="location-details">
@@ -1596,6 +1587,12 @@ async function generatePdfReport() {
         
         // Cover page
         exportProgress.textContent = 'Creating cover page...';
+        
+        pdf.setFont('times', 'bold');
+        pdf.setFontSize(38);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text('H5 Operations', 105, 40, { align: 'center' });
+        
         pdf.setFontSize(24);
         pdf.setTextColor(0, 0, 0);
         pdf.text('10-Day Weather Forecast Report', 105, 40, { align: 'center' });
@@ -1725,5 +1722,6 @@ async function generatePdfReport() {
     </script>
 </body>
 </html>
+
 
 
