@@ -684,48 +684,6 @@
             margin-bottom: 20px;
         }
 
-        /* Watermark Settings */
-        .watermark-settings {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .watermark-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .watermark-preview {
-            margin: 15px 0;
-            padding: 20px;
-            background: var(--secondary-color);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .watermark-preview img {
-            max-width: 200px;
-            max-height: 100px;
-            opacity: 0.3;
-        }
-
-        .watermark-preview .preview-text {
-            color: var(--text-secondary);
-            opacity: 0.3;
-            font-size: 2rem;
-            font-weight: bold;
-        }
-
         /* Responsive Design */
         @media (max-width: 1200px) {
             .charts-container {
@@ -975,7 +933,7 @@
         </div>
     </div>
 
-    <!-- PDF Export Modal with Watermark Settings -->
+    <!-- PDF Export Modal -->
     <div id="exportModal" class="modal export-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -990,48 +948,7 @@
                             <input type="radio" id="exportCurrent" name="exportOption" value="current" checked>
                             <div style="flex: 1;">
                                 <label for="exportCurrent">Current Day Only</label>
-                                <div class="export-option-desc">Export graphs for the currently selected day</div>
-                            </div>
-                        </div>
-                        <div class="export-option">
-                            <input type="radio" id="exportAllDays" name="exportOption" value="all">
-                            <div style="flex: 1;">
-                                <label for="exportAllDays">All Days (Multiple Pages)</label>
-                                <div class="export-option-desc">Export graphs for all days in the forecast range</div>
-                            </div>
-                        </div>
-                        <div class="export-option">
-                            <input type="radio" id="exportSummary" name="exportOption" value="summary">
-                            <div style="flex: 1;">
-                                <label for="exportSummary">Summary Report</label>
-                                <div class="export-option-desc">Create a summary report with daily statistics</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Watermark Settings -->
-                    <div class="watermark-settings">
-                        <h3><i class="fas fa-water"></i> Watermark Settings</h3>
-                        
-                        <div class="watermark-option">
-                            <input type="checkbox" id="enableWatermark" checked>
-                            <label for="enableWatermark" style="font-weight: 500;">Add Watermark to PDF</label>
-                        </div>
-                        
-                        <div id="watermarkControls">
-                            <div class="input-group">
-                                <label for="logoUpload">Upload Watermark Logo (PNG):</label>
-                                <input type="file" id="logoUpload" accept=".png">
-                            </div>
-                            
-                            <div class="watermark-preview" id="watermarkPreview">
-                                <div class="preview-text">Weather Dashboard</div>
-                                <img id="previewImage" src="" alt="Watermark preview" style="display: none;">
-                            </div>
-                            
-                            <div class="watermark-option">
-                                <input type="checkbox" id="watermarkOnAllPages" checked>
-                                <label for="watermarkOnAllPages">Apply watermark to all pages</label>
+                                <div class="export-option-desc">Export temperature and wind charts on one page</div>
                             </div>
                         </div>
                     </div>
@@ -1093,14 +1010,6 @@
         const exportProcessing = document.getElementById('exportProcessing');
         const exportProgress = document.getElementById('exportProgress');
         
-        // Watermark elements
-        const enableWatermark = document.getElementById('enableWatermark');
-        const logoUpload = document.getElementById('logoUpload');
-        const watermarkPreview = document.getElementById('watermarkPreview');
-        const previewImage = document.getElementById('previewImage');
-        const watermarkOnAllPages = document.getElementById('watermarkOnAllPages');
-        const watermarkControls = document.getElementById('watermarkControls');
-        
         // Chart instances
         let temperatureChart = null;
         let windChart = null;
@@ -1110,8 +1019,6 @@
         let currentLocation = null;
         let currentDayIndex = 0;
         let forecastData = null;
-        let watermarkImageData = null;
-        let watermarkImage = null;
         let isLoggedIn = false;
         
         // Login credentials
@@ -1168,10 +1075,6 @@
                     modalLongitude.value = lon;
                 });
             });
-            
-            // Watermark controls
-            enableWatermark.addEventListener('change', toggleWatermarkControls);
-            logoUpload.addEventListener('change', handleLogoUpload);
             
             // Set default dates
             setDefaultDates();
@@ -1250,77 +1153,10 @@
                 localStorage.setItem('weatherDashboardLocations', JSON.stringify(savedLocations));
             }
             
-            // Load watermark settings
-            const watermarkSettings = localStorage.getItem('watermarkSettings');
-            if (watermarkSettings) {
-                const settings = JSON.parse(watermarkSettings);
-                enableWatermark.checked = settings.enabled || false;
-                watermarkImageData = settings.imageData || null;
-                watermarkOnAllPages.checked = settings.allPages || true;
-                
-                toggleWatermarkControls();
-                updateWatermarkPreview();
-            }
-            
             // Load first location
             if (savedLocations.length > 0) {
                 selectLocation(savedLocations[0]);
             }
-        }
-        
-        // Watermark Functions
-        function toggleWatermarkControls() {
-            if (enableWatermark.checked) {
-                watermarkControls.style.display = 'block';
-            } else {
-                watermarkControls.style.display = 'none';
-            }
-            saveWatermarkSettings();
-        }
-        
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (!file.type.includes('png')) {
-                alert('Please upload a PNG file for the watermark');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                watermarkImageData = e.target.result;
-                
-                // Create image object for dimensions
-                watermarkImage = new Image();
-                watermarkImage.onload = function() {
-                    updateWatermarkPreview();
-                    saveWatermarkSettings();
-                };
-                watermarkImage.src = watermarkImageData;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        function updateWatermarkPreview() {
-            if (watermarkImageData) {
-                previewImage.src = watermarkImageData;
-                previewImage.style.display = 'block';
-                watermarkPreview.querySelector('.preview-text').style.display = 'none';
-                previewImage.style.opacity = 0.3;
-            } else {
-                previewImage.style.display = 'none';
-                watermarkPreview.querySelector('.preview-text').style.display = 'block';
-            }
-        }
-        
-        function saveWatermarkSettings() {
-            const settings = {
-                enabled: enableWatermark.checked,
-                imageData: watermarkImageData,
-                allPages: watermarkOnAllPages.checked
-            };
-            localStorage.setItem('watermarkSettings', JSON.stringify(settings));
         }
         
         // Location Management Functions
@@ -1545,7 +1381,7 @@
             if (temperatureChart) temperatureChart.destroy();
             if (windChart) windChart.destroy();
             
-            // Temperature Chart
+            // Temperature Chart - Black/White version
             const tempCtx = document.getElementById('temperatureChart').getContext('2d');
             temperatureChart = new Chart(tempCtx, {
                 type: 'line',
@@ -1554,8 +1390,8 @@
                     datasets: [{
                         label: 'Temperature (°C)',
                         data: temperatures,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#000000',
+                        backgroundColor: 'rgba(0, 0, 0, 0.05)',
                         borderWidth: 2,
                         tension: 0.3,
                         fill: true
@@ -1565,27 +1401,56 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { labels: { color: '#f8fafc' } },
+                        legend: { 
+                            labels: { 
+                                color: '#000000',
+                                font: {
+                                    size: 12
+                                }
+                            } 
+                        },
                         title: { 
                             display: true,
-                            text: `Temperature on ${date}`,
-                            color: '#f8fafc'
+                            text: `Temperature Forecast - ${date}`,
+                            color: '#000000',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
                         }
                     },
                     scales: {
                         x: { 
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                            ticks: { color: '#94a3b8' }
+                            grid: { 
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawBorder: true,
+                                borderColor: '#000000'
+                            },
+                            ticks: { 
+                                color: '#000000',
+                                font: {
+                                    size: 10
+                                }
+                            }
                         },
                         y: { 
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                            ticks: { color: '#94a3b8' }
+                            grid: { 
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawBorder: true,
+                                borderColor: '#000000'
+                            },
+                            ticks: { 
+                                color: '#000000',
+                                font: {
+                                    size: 10
+                                }
+                            }
                         }
                     }
                 }
             });
             
-            // Wind Chart
+            // Wind Chart - Black/White version
             const windCtx = document.getElementById('windChart').getContext('2d');
             windChart = new Chart(windCtx, {
                 type: 'line',
@@ -1595,17 +1460,18 @@
                         {
                             label: 'Wind Speed (m/s)',
                             data: windSpeeds,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderColor: '#333333',
+                            backgroundColor: 'rgba(51, 51, 51, 0.05)',
                             borderWidth: 2,
                             tension: 0.3,
-                            fill: true
+                            fill: true,
+                            borderDash: [5, 5]
                         },
                         {
                             label: 'Wind Gusts (m/s)',
                             data: windGusts,
-                            borderColor: '#f59e0b',
-                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderColor: '#666666',
+                            backgroundColor: 'rgba(102, 102, 102, 0.05)',
                             borderWidth: 2,
                             tension: 0.3,
                             fill: false
@@ -1616,21 +1482,50 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { labels: { color: '#f8fafc' } },
+                        legend: { 
+                            labels: { 
+                                color: '#000000',
+                                font: {
+                                    size: 12
+                                }
+                            } 
+                        },
                         title: { 
                             display: true,
-                            text: `Wind Speed & Gusts on ${date}`,
-                            color: '#f8fafc'
+                            text: `Wind Speed & Gusts - ${date}`,
+                            color: '#000000',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
                         }
                     },
                     scales: {
                         x: { 
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                            ticks: { color: '#94a3b8' }
+                            grid: { 
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawBorder: true,
+                                borderColor: '#000000'
+                            },
+                            ticks: { 
+                                color: '#000000',
+                                font: {
+                                    size: 10
+                                }
+                            }
                         },
                         y: { 
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                            ticks: { color: '#94a3b8' }
+                            grid: { 
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawBorder: true,
+                                borderColor: '#000000'
+                            },
+                            ticks: { 
+                                color: '#000000',
+                                font: {
+                                    size: 10
+                                }
+                            }
                         }
                     }
                 }
@@ -1655,7 +1550,7 @@
             }
         }
         
-        // PDF Export Functions - FIXED VERSION
+        // PDF Export Functions
         function openExportModal() {
             if (!currentLocation || !forecastData) {
                 alert('Please select a location and load forecast data first.');
@@ -1672,8 +1567,6 @@
         
         async function generatePdfReport() {
             try {
-                const exportOption = document.querySelector('input[name="exportOption"]:checked').value;
-                
                 exportOptions.style.display = 'none';
                 exportProcessing.style.display = 'block';
                 exportProgress.textContent = 'Initializing PDF generation...';
@@ -1681,21 +1574,93 @@
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 
-                // Create report based on selected option
-                if (exportOption === 'current') {
-                    await exportCurrentDay(pdf);
-                } else if (exportOption === 'all') {
-                    await exportAllDays(pdf);
-                } else if (exportOption === 'summary') {
-                    await exportSummaryReport(pdf);
-                }
+                // Create cover page with black text
+                pdf.setFontSize(20);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Weather Forecast Report', 105, 30, { align: 'center' });
                 
-                // Add watermark if enabled - SIMPLIFIED VERSION
-                if (enableWatermark.checked && watermarkImageData) {
-                    addWatermarkSimple(pdf);
-                }
+                pdf.setFontSize(14);
+                pdf.setTextColor(50, 50, 50);
+                pdf.text(currentLocation.name, 105, 45, { align: 'center' });
                 
-                const fileName = `Weather_Forecast_${currentLocation.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+                const currentDay = forecastData.days[currentDayIndex];
+                pdf.text(`${currentDay.dayOfWeek}, ${currentDay.date}`, 105, 55, { align: 'center' });
+                
+                pdf.setFontSize(12);
+                pdf.text(`Coordinates: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)}`, 105, 65, { align: 'center' });
+                pdf.text(`Report generated: ${new Date().toLocaleDateString()}`, 105, 75, { align: 'center' });
+                
+                // Add temperature chart on same page
+                exportProgress.textContent = 'Capturing temperature chart...';
+                
+                // Temporarily change chart to black/white for capture
+                const originalTempChart = { ...temperatureChart.config.data.datasets[0] };
+                const originalWindChart = { 
+                    windSpeed: { ...windChart.config.data.datasets[0] },
+                    windGusts: { ...windChart.config.data.datasets[1] }
+                };
+                
+                // Apply black/white styles for capture
+                temperatureChart.config.data.datasets[0].borderColor = '#000000';
+                temperatureChart.config.data.datasets[0].backgroundColor = 'rgba(0, 0, 0, 0.1)';
+                temperatureChart.update('none');
+                
+                windChart.config.data.datasets[0].borderColor = '#333333';
+                windChart.config.data.datasets[0].backgroundColor = 'rgba(51, 51, 51, 0.1)';
+                windChart.config.data.datasets[1].borderColor = '#666666';
+                windChart.update('none');
+                
+                // Add separator line
+                pdf.setDrawColor(0, 0, 0);
+                pdf.setLineWidth(0.5);
+                pdf.line(10, 85, 200, 85);
+                
+                // Add temperature chart
+                const tempCanvas = await html2canvas(document.getElementById('temperatureChart'), {
+                    scale: 1.5,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+                const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
+                pdf.addImage(tempImgData, 'PNG', 10, 90, 190, 80);
+                
+                // Add wind chart on same page
+                exportProgress.textContent = 'Capturing wind chart...';
+                const windCanvas = await html2canvas(document.getElementById('windChart'), {
+                    scale: 1.5,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+                const windImgData = windCanvas.toDataURL('image/png', 1.0);
+                pdf.addImage(windImgData, 'PNG', 10, 180, 190, 80);
+                
+                // Add summary section
+                pdf.setFontSize(10);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Daily Summary:', 20, 270);
+                
+                pdf.setFontSize(9);
+                pdf.text(`Average Temperature: ${currentDay.avgTemp.toFixed(1)}°C`, 20, 277);
+                pdf.text(`Max Temperature: ${currentDay.maxTemp.toFixed(1)}°C`, 20, 284);
+                pdf.text(`Min Temperature: ${currentDay.minTemp.toFixed(1)}°C`, 20, 291);
+                pdf.text(`Max Wind Speed: ${currentDay.maxWind.toFixed(1)} m/s`, 110, 277);
+                pdf.text(`Max Wind Gust: ${currentDay.maxGust.toFixed(1)} m/s`, 110, 284);
+                
+                // Restore original chart colors
+                temperatureChart.config.data.datasets[0] = originalTempChart;
+                windChart.config.data.datasets[0] = originalWindChart.windSpeed;
+                windChart.config.data.datasets[1] = originalWindChart.windGusts;
+                temperatureChart.update('none');
+                windChart.update('none');
+                
+                // Add page number
+                pdf.setFontSize(8);
+                pdf.setTextColor(100, 100, 100);
+                pdf.text('Page 1 of 1', 105, 290, { align: 'center' });
+                
+                const fileName = `Weather_Report_${currentLocation.name.replace(/\s+/g, '_')}_${currentDay.date}.pdf`;
                 pdf.save(fileName);
                 
                 setTimeout(() => {
@@ -1710,190 +1675,6 @@
                     closeExportModal();
                     alert('Failed to generate PDF. Please try again.');
                 }, 1000);
-            }
-        }
-        
-        // SIMPLIFIED WATERMARK FUNCTION - No setGState
-        function addWatermarkSimple(pdf) {
-            const pageCount = pdf.getNumberOfPages();
-            
-            for (let i = 1; i <= pageCount; i++) {
-                pdf.setPage(i);
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                
-                try {
-                    // Add watermark with transparency (size adjusted for PDF)
-                    if (watermarkImageData) {
-                        // Center the watermark
-                        const imgWidth = 80; // mm
-                        const imgHeight = 40; // mm
-                        const x = (pageWidth - imgWidth) / 2;
-                        const y = (pageHeight - imgHeight) / 2;
-                        
-                        // Add image with opacity
-                        pdf.addImage(watermarkImageData, 'PNG', x, y, imgWidth, imgHeight);
-                    }
-                } catch (error) {
-                    console.log('Using text watermark');
-                    // Fallback to text watermark
-                    pdf.setTextColor(200, 200, 200, 30); // RGB + alpha
-                    pdf.setFontSize(40);
-                    pdf.text('Weather Dashboard', pageWidth/2, pageHeight/2, { align: 'center' });
-                }
-            }
-        }
-        
-        async function exportCurrentDay(pdf) {
-            exportProgress.textContent = 'Creating cover page...';
-            
-            // Cover page
-            pdf.setFontSize(24);
-            pdf.setTextColor(59, 130, 246);
-            pdf.text('Weather Forecast Report', 105, 40, { align: 'center' });
-            
-            pdf.setFontSize(16);
-            pdf.setTextColor(100, 100, 100);
-            pdf.text(currentLocation.name, 105, 55, { align: 'center' });
-            
-            const currentDay = forecastData.days[currentDayIndex];
-            pdf.text(`${currentDay.dayOfWeek}, ${currentDay.date}`, 105, 65, { align: 'center' });
-            
-            // Add charts
-            exportProgress.textContent = 'Capturing temperature chart...';
-            pdf.addPage();
-            const tempCanvas = await html2canvas(document.getElementById('temperatureChart'), {
-                scale: 2,
-                useCORS: true,
-                logging: false
-            });
-            const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
-            pdf.addImage(tempImgData, 'PNG', 10, 20, 190, 120);
-            
-            exportProgress.textContent = 'Capturing wind chart...';
-            pdf.addPage();
-            const windCanvas = await html2canvas(document.getElementById('windChart'), {
-                scale: 2,
-                useCORS: true,
-                logging: false
-            });
-            const windImgData = windCanvas.toDataURL('image/png', 1.0);
-            pdf.addImage(windImgData, 'PNG', 10, 20, 190, 120);
-            
-            // Add page numbers
-            addPageNumbers(pdf);
-        }
-        
-        async function exportAllDays(pdf) {
-            exportProgress.textContent = 'Creating multi-day report...';
-            
-            // Cover page
-            pdf.setFontSize(24);
-            pdf.setTextColor(59, 130, 246);
-            pdf.text('10-Day Weather Forecast Report', 105, 40, { align: 'center' });
-            
-            pdf.setFontSize(16);
-            pdf.setTextColor(100, 100, 100);
-            pdf.text(currentLocation.name, 105, 55, { align: 'center' });
-            pdf.text(`${forecastData.startDate} to ${forecastData.endDate}`, 105, 65, { align: 'center' });
-            
-            // Store original chart
-            const originalDayIndex = currentDayIndex;
-            
-            // Export each day
-            for (let i = 0; i < forecastData.days.length; i++) {
-                exportProgress.textContent = `Processing day ${i + 1} of ${forecastData.days.length}...`;
-                
-                updateChartsForDay(i);
-                await new Promise(resolve => setTimeout(resolve, 300));
-                
-                pdf.addPage();
-                const day = forecastData.days[i];
-                
-                pdf.setFontSize(16);
-                pdf.setTextColor(59, 130, 246);
-                pdf.text(`${day.dayOfWeek}, ${day.date}`, 20, 20);
-                
-                // Add temperature chart
-                const tempCanvas = await html2canvas(document.getElementById('temperatureChart'), {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
-                });
-                const tempImgData = tempCanvas.toDataURL('image/png', 1.0);
-                pdf.addImage(tempImgData, 'PNG', 10, 30, 190, 100);
-                
-                pdf.addPage();
-                pdf.setFontSize(16);
-                pdf.setTextColor(59, 130, 246);
-                pdf.text(`${day.dayOfWeek}, ${day.date} - Wind Data`, 20, 20);
-                
-                // Add wind chart
-                const windCanvas = await html2canvas(document.getElementById('windChart'), {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
-                });
-                const windImgData = windCanvas.toDataURL('image/png', 1.0);
-                pdf.addImage(windImgData, 'PNG', 10, 30, 190, 100);
-            }
-            
-            // Restore original chart
-            updateChartsForDay(originalDayIndex);
-            addPageNumbers(pdf);
-        }
-        
-        async function exportSummaryReport(pdf) {
-            exportProgress.textContent = 'Creating summary report...';
-            
-            // Cover page
-            pdf.setFontSize(24);
-            pdf.setTextColor(59, 130, 246);
-            pdf.text('Weather Forecast Summary Report', 105, 40, { align: 'center' });
-            
-            pdf.setFontSize(16);
-            pdf.setTextColor(100, 100, 100);
-            pdf.text(currentLocation.name, 105, 55, { align: 'center' });
-            pdf.text(`${forecastData.startDate} to ${forecastData.endDate}`, 105, 65, { align: 'center' });
-            
-            // Summary table
-            pdf.addPage();
-            pdf.setFontSize(18);
-            pdf.setTextColor(59, 130, 246);
-            pdf.text('Daily Summary', 20, 20);
-            
-            pdf.setFontSize(10);
-            pdf.setTextColor(100, 100, 100);
-            let y = 30;
-            
-            forecastData.days.forEach(day => {
-                if (y > 280) {
-                    pdf.addPage();
-                    y = 20;
-                }
-                
-                pdf.setFontSize(12);
-                pdf.setTextColor(0, 0, 0);
-                pdf.text(`${day.dayOfWeek}, ${day.date}`, 20, y);
-                
-                pdf.setFontSize(10);
-                pdf.setTextColor(100, 100, 100);
-                pdf.text(`Avg Temp: ${day.avgTemp.toFixed(1)}°C | Max Temp: ${day.maxTemp.toFixed(1)}°C | Min Temp: ${day.minTemp.toFixed(1)}°C`, 20, y + 8);
-                pdf.text(`Max Wind: ${day.maxWind.toFixed(1)} m/s | Max Gust: ${day.maxGust.toFixed(1)} m/s`, 20, y + 16);
-                
-                y += 30;
-            });
-            
-            addPageNumbers(pdf);
-        }
-        
-        function addPageNumbers(pdf) {
-            const pageCount = pdf.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(8);
-                pdf.setTextColor(150, 150, 150);
-                pdf.text(`Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
             }
         }
         
